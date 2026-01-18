@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class KMeans:
     """
     Runs K-means clustering logic
