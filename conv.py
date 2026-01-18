@@ -92,6 +92,85 @@ class Conv2d:
         return f"{self.__class__.__name__}(in_channels={self.in_channels}, out_channels={self.out_channels})"
 
 
+class ConvTranspose2d:
+    """
+    Transpose convolutional layer
+    """
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: tuple[int, int],
+        stride: int = 1,
+        padding: int = 0,
+    ):
+        """
+        Creates an instance of the `ConvTranspose2d` class
+        """
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
+
+        # Initialize weight matrix of shape (C_in, C_out, K_h, K_w)
+        self.W = np.random.randn(
+            self.in_channels,
+            self.out_channels,
+            *self.kernel_size,
+        )
+
+        # Initialize bias vector of shape (C_out)
+        self.bias = np.zeros(shape=(self.out_channels,))
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        """
+        Forward pass for the transpose conv layer
+
+        {H_prime, W_prime} = ({H, W} - 1) * S - 2P + K_{h, w}
+
+        Parameters:
+            x (np.ndarray): Input batch of shape (B, C_in, H, W)
+
+        Returns:
+            np.ndarray: Output batch of shape (B, C_out, H', W')
+        """
+        B, _, H, W = x.shape
+        K_h, K_w = self.kernel_size
+
+        H_prime = (H - 1) * self.stride - 2 * self.padding + K_h
+        W_prime = (W - 1) * self.stride - 2 * self.padding + K_w
+
+        # Define output shape
+        out = np.zeros(shape=(B, self.out_channels, H_prime, W_prime))
+
+        for b in range(B):
+            for c in range(self.in_channels):
+                for h in range(H):
+                    for w in range(W):
+                        for kh in range(K_h):
+                            for kw in range(K_w):
+                                h_start = h * self.stride - self.padding
+                                w_start = w * self.stride - self.padding
+
+                                h_out, w_out = h_start + kh, w_start + kw
+
+                                if 0 <= h_out < H_prime and 0 <= w_out < W_prime:
+                                    out_slice = (
+                                        x[b, c, h, w] * self.W[c, :, kh, kw]
+                                    )  # Of shape (C_out,)
+                                    out[b, :, h_out, w_out] += out_slice
+
+            # Add bias at the end
+            out[b] += self.bias[:, None, None]
+
+        return out
+
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        return self.forward(x=x)
+
+
 class MaxPool2d:
     """
     Max pooling layer
