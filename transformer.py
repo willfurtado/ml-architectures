@@ -288,3 +288,67 @@ if __name__ == "__main__":
     print(f"{mha_out.shape = }")
     print(f"{block_out.shape = }")
     print(f"{vit_out.shape = }")
+
+
+class UnfoldLinearPatchify(nn.Module):
+    """
+    Unfold + Linear version of image patching
+    """
+
+    def __init__(self, img_channels: int, patch_size: int, feature_dim: int):
+        """
+        Creates an instance of the `UnfoldLinearPatchify` class
+        """
+        super().__init__()
+
+        self.img_channels = img_channels
+        self.patch_size = patch_size
+        self.feature_dim = feature_dim
+
+        self.unfold = nn.Unfold(kernel_size=self.patch_size, stride=self.patch_size)
+        self.proj = nn.Linear(self.img_channels * self.patch_size**2, self.feature_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for image patching
+        """
+
+        unfolded_patches = self.unfold(x)  # (B, C, H, W) -> (B, C * P^2, HW / P ^2)
+        patches_reshaped = unfolded_patches.transpose(1, 2)  # (B, HW / P ^2, C * P^2)
+        patch_embeddings = self.proj(patches_reshaped)
+
+        return patch_embeddings
+
+
+class ConvPatchify(nn.Module):
+    """
+    Conv-based version of image patching
+    """
+
+    def __init__(self, img_channels: int, patch_size: int, feature_dim: int):
+        """
+        Creates an instance of the `ConvPatchify` class
+        """
+        super().__init__()
+
+        self.img_channels = img_channels
+        self.patch_size = patch_size
+        self.feature_dim = feature_dim
+
+        self.conv = nn.Conv2d(
+            in_channels=self.img_channels,
+            out_channels=self.feature_dim,
+            kernel_size=self.patch_size,
+            stride=self.patch_size,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for the `ConvPatchify` layer
+        """
+        B, *_ = x.shape
+
+        conv_out = self.conv(x)  # (B, C_in, H, W) -> (B, feature_dim, H/P, W/P)
+        patch_embeddings = conv_out.reshape(B, self.feature_dim, -1).transpose(1, 2)
+
+        return patch_embeddings
