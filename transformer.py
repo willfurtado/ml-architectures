@@ -245,7 +245,7 @@ class MultiHeadAttention(nn.Module):
 
         mixed_outputs = self.linear_proj(
             concat_outputs
-        )  # (B, F, n_heads * d_v) -> (B, F, d_v)
+        )  # (B, F, n_heads * d_v) -> (B, F, input_dim)
 
         return mixed_outputs
 
