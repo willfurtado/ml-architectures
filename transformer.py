@@ -250,46 +250,6 @@ class MultiHeadAttention(nn.Module):
         return mixed_outputs
 
 
-if __name__ == "__main__":
-    input_dim, n_heads, d_k, d_v, mlp_dim = 32, 8, 64, 96, 48
-    patch_size, img_dims, depth = 8, (3, 32, 32), 4
-    num_classes = 10
-    B, F = 2, 5
-
-    head = AttentionHead(input_dim=input_dim, d_k=d_k, d_v=d_v)
-    mha = MultiHeadAttention(n_heads=n_heads, input_dim=input_dim, d_k=d_k, d_v=d_v)
-    block = TransformerBlock(
-        n_heads=n_heads, input_dim=input_dim, d_k=d_k, d_v=d_v, mlp_dim=mlp_dim
-    )
-
-    # Construct final vision transformer model
-    vit = ViT(
-        patch_size=patch_size,
-        img_dims=img_dims,
-        depth=depth,
-        n_heads=n_heads,
-        input_dim=input_dim,
-        d_k=d_k,
-        d_v=d_v,
-        mlp_dim=mlp_dim,
-        num_classes=num_classes,
-    )
-
-    x = torch.ones(B, F, input_dim)
-    img = torch.randn(B, *img_dims)
-
-    # Check forward pass
-    head_out = head(x)
-    mha_out = mha(x)
-    block_out = block(x)
-    vit_out = vit(img)
-
-    print(f"{head_out.shape = }")
-    print(f"{mha_out.shape = }")
-    print(f"{block_out.shape = }")
-    print(f"{vit_out.shape = }")
-
-
 class UnfoldLinearPatchify(nn.Module):
     """
     Unfold + Linear version of image patching
@@ -352,3 +312,43 @@ class ConvPatchify(nn.Module):
         patch_embeddings = conv_out.reshape(B, self.feature_dim, -1).transpose(1, 2)
 
         return patch_embeddings
+
+
+if __name__ == "__main__":
+    input_dim, n_heads, d_k, d_v, mlp_dim = 32, 8, 64, 96, 48
+    patch_size, img_dims, depth = 8, (3, 32, 32), 4
+    num_classes = 10
+    B, F = 2, 5
+
+    head = AttentionHead(input_dim=input_dim, d_k=d_k, d_v=d_v)
+    mha = MultiHeadAttention(n_heads=n_heads, input_dim=input_dim, d_k=d_k, d_v=d_v)
+    block = TransformerBlock(
+        n_heads=n_heads, input_dim=input_dim, d_k=d_k, d_v=d_v, mlp_dim=mlp_dim
+    )
+
+    # Construct final vision transformer model
+    vit = ViT(
+        patch_size=patch_size,
+        img_dims=img_dims,
+        depth=depth,
+        n_heads=n_heads,
+        input_dim=input_dim,
+        d_k=d_k,
+        d_v=d_v,
+        mlp_dim=mlp_dim,
+        num_classes=num_classes,
+    )
+
+    x = torch.ones(B, F, input_dim)
+    img = torch.randn(B, *img_dims)
+
+    # Check forward pass
+    head_out = head(x)
+    mha_out = mha(x)
+    block_out = block(x)
+    vit_out = vit(img)
+
+    print(f"{head_out.shape = }")
+    print(f"{mha_out.shape = }")
+    print(f"{block_out.shape = }")
+    print(f"{vit_out.shape = }")
